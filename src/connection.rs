@@ -83,7 +83,12 @@ impl SingleConnection {
 			.send_internal(Pin::new(&mut write))
 			.await?;
 		{
-			let response = Packet::read(Pin::new(&mut read)).await?;
+			let mut response = Packet::read(Pin::new(&mut read)).await?;
+			if response.get_packet_type() == TYPE_RESPONSE {
+				// Source servers send back an empty Response packet and then
+				// the auth response.
+				response = Packet::read(Pin::new(&mut read)).await?;
+			}
 			if response.get_packet_type() != TYPE_AUTH_RESPONSE {
 				return Err(UnexpectedPacket);
 			}
